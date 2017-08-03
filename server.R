@@ -16,7 +16,7 @@ communities <- data$communities
 phylo <- data$phylo
 tyson <- data$spp.list
 demo <- data$demo.data
-traits <- data$traits
+trait.data <- data$traits
 
 shinyServer(function(input, output) {
   
