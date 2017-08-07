@@ -1,13 +1,13 @@
 # tests for server
 
-rm(list = ls(all = T))
-library(shiny)
+#rm(list = ls(all = T))
+#library(shiny)
 library(tidyverse)
 library(magrittr)
 library(ade4)
 library(ape)
 library(pez)
-source('helpers.R')
+#source('helpers.R')
 
 load('data/data_list.RData')
 
@@ -40,12 +40,22 @@ local.com <- filter(communities, exotic_species == 'Ailanthus_altissima')
 
 local.phy <- drop.tip(phylo, setdiff(phylo$tip.label, local.com$community))
 test.dist <- data.frame(cophenetic(local.phy))
-diag(test.dist) <- NA
-min.thresh <- min(test.dist$Ailanthus_altissima, na.rm = T)
 
-n.runs <- 200
-for(i in 1:n.runs){
-  test <- rarefy_phylo_dists('Ailanthus_altissima', test.dist, n.rare = 15)
-  
-  if(test$rare.nnd < min.thresh) warning('You fucked up')
+for(i in seq(0,1,.05)){
+  demo[ ,paste("a_",i, sep = "")] <- NA
 }
+
+for(x in unique(demo$Species)){
+  for(a in seq(0,1,.05)){
+    test <- rarefy_FPD(x, make_local_phylo_dist(x, communities, phylo),
+                       make_local_trait_dist(x, communities, trait.data,
+                                             traits,
+                                             scale = "scaledBYrange"),
+                       n.rare = 11, a = a, p = 2)
+    demo[demo$Species == x, paste("a_", a,sep="")] <- test$rare.nnd
+    
+  }
+}
+
+
+
