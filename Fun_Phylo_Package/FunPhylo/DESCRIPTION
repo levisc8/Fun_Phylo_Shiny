@@ -10,7 +10,7 @@ Description: A set of helper functions and data sets to power the
   functional-phylogenetic distances, and plot outputs using ggplot2
   style graphics. 
 Depends: R (>= 3.3.0)
-Imports: tidyverse,
+Imports: dplyr,
          magrittr,
          ade4,
          ape,
