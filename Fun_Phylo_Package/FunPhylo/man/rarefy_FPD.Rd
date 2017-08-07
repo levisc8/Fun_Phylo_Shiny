@@ -5,7 +5,7 @@
 \title{Rarefied Function-Phylogenetic Distances}
 \usage{
 rarefy_FPD(focal.species, phylo.mat, fun.mat, metric = c("MPD", "NND"),
-  n.resamp = 1000, n.rare)
+  n.resamp = 1000, n.rare, a, p)
 }
 \arguments{
 \item{focal.species}{The name of the focal species in the 
@@ -26,6 +26,9 @@ Must be less than the total in the community.}
 
 \item{a}{The phylogenetic scaling factor for the calculation of
 functional-phylogenetic distances}
+
+\item{p}{The power to raise each distance value to in the functional-
+phylogenetic distance calculation}
 }
 \description{
 \code{rare_FPD} resamples a phylogenetic and functional distance matrix

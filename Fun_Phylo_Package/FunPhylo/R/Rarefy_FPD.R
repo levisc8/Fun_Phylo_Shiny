@@ -17,16 +17,51 @@
 #' Must be less than the total in the community.
 #' @param a The phylogenetic scaling factor for the calculation of
 #' functional-phylogenetic distances
-#'  
+#' @param p The power to raise each distance value to in the functional-
+#' phylogenetic distance calculation
+#' 
+#' @importFrom magrittr %>%
 #' @export
 #' 
 rarefy_FPD <- function(focal.species, phylo.mat, fun.mat,
                        metric = c("MPD", "NND"),
                        n.resamp = 1000, n.rare, 
-                       a) {
+                       a, p) {
+  
   mpd.tf <- "MPD" %in% metric
   nnd.tf <- "NND" %in% metric
+  
+  if(!inherits(phylo.mat, c('dist', 'matrix', 'data.frame')) |
+     !inherits(fun.mat,  c('dist', 'matrix', 'data.frame'))) {
+    stop('coerce phylogenetic and/or functional distance matrices to\n',
+         'one of the following classes: "dist", "matrix", or "data.frame"')
+  }
+  
+  if(inherits(phylo.mat, 'dist') | inherits(phylo.mat,'matrix')){
+    phylo.mat <- as.data.frame(as.matrix(phylo.mat))
+  }
 
+  if(inherits(fun.mat, 'dist') | inherits(fun.mat,'matrix')){
+    fun.mat <- as.data.frame(as.matrix(fun.mat))
+  }
+
+  if(dim(phylo.mat)[1] < dim(fun.mat)[1]){
+    stop('More species with trait data than are in phylogeny')
+  }
+  
+  phylo.mat <- phylo.mat[rownames(phylo.mat) %in% sort(rownames(fun.mat)),
+                         names(phylo.mat) %in% sort(names(fun.mat))] %>%
+    .[sort(rownames(.)), sort(names(.))]
+  fun.mat <- fun.mat[sort(rownames(fun.mat)), sort(names(fun.mat))]
+  
+  if(!identical(names(phylo.mat), names(fun.mat)) & 
+     !identical(rownames(phylo.mat), rownames(fun.mat))){ 
+    stop('You fucked up')
+  }
+  fpd <- func_phy_dist(FDist = as.matrix(fun.mat),
+                       PDist = as.matrix(phylo.mat),
+                       phyloWeight = a, p = p)
+  
   if(mpd.tf){
     rare.mpd <- rep(NA, n.resamp)
   }
@@ -34,8 +69,8 @@ rarefy_FPD <- function(focal.species, phylo.mat, fun.mat,
     rare.bl <- rep(NA, n.resamp)
   }
 
-  diag(dist.mat) <- NA
-  focal.column <- dist.mat[ ,focal.species]
+  diag(fpd) <- NA
+  focal.column <- fpd[ ,focal.species]
 
   for(i in 1:n.resamp){
     resamp.x <- base::sample(1:length(focal.column),
@@ -53,9 +88,11 @@ rarefy_FPD <- function(focal.species, phylo.mat, fun.mat,
   out <- list()
   if(mpd.tf){
     out$rare.mpd <- mean(rare.mpd)
+    out$sample.mpds <- rare.mpd
   }
   if(nnd.tf){
     out$rare.nnd <- mean(rare.bl)
+    out$sample.nnds <- rare.bl
   }
 
   return(out)

@@ -1,3 +1,39 @@
+#' Create a subsetted KTab
+#' @description A wrapper around functions from \code{ade4} to create
+#' the specialized data structure known as a \code{ktab}. These
+#' are used in subsequent functions to calculate a generalized
+#' Gower distance based on the methods of Pavoine et al 2009.
+#'  
+#' @inheritParams make_local_phylo_dist
+#' @param trait.data A data frame that contains trait data information.
+#' Currently, this only supports names from \emph{Levin et al 2017}, but
+#' will hopefully soon be generalized to include all trait names listed
+#' in \emph{TRY (Kattge et al 2017)}.
+#' @param traits A character vector of trait names that should match the names
+#' in \code{trait.data}. An effect method of subsetting this is to simply call
+#' \code{names(trait.data)[first.trait:last.trait]}
+#' 
+#' @details \code{ade4} provides many useful functions for calculating
+#' trait based distances. The aim of this particular function is to create
+#' an easy-to-automate version of these for use in stepwise model selection
+#' procedures which can handle odd boundary cases not necessarily forseen
+#' in previous implementations. This particular function makes it easy
+#' to loop across a variety of traits without having to stop and figure 
+#' out which type of variable each particular portion of the \code{ktab}
+#' is. The \code{VarType} output is designed to seamlessly integrate
+#' with \code{dist.ktab}'s \code{type} argument to allow for effortless
+#' integration.
+#' 
+#' @return A list consisting of 
+#' \itemize{
+#'    \item{\code{KTab}}{The \code{ktab} which can be passed to 
+#'    \code{dist.ktab}}
+#'    \item{\code{VarTypes}}{A character vector that can be passed to 
+#'    \code{dist.ktab}}
+#' }
+#' 
+#' @export
+#' 
 
 make_local_traits_ktab <- function(focal.species,community.data,
                                    trait.data, traits){
