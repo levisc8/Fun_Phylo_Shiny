@@ -18,7 +18,7 @@ demo <- data$demo.data
 trait.data <- data$traits
 
 traits <- names(trait.data[-1])
-
+# test trait ktab functions
 for(i in 1:10){
   trait.test <- traits[base::sample(1:24,9)]
   
@@ -31,4 +31,21 @@ for(i in 1:10){
   test.regional <- make_regional_traits_ktab(trait.data, traits)
   
   
+}
+
+
+# test rarefying functions
+
+local.com <- filter(communities, exotic_species == 'Ailanthus_altissima')
+
+local.phy <- drop.tip(phylo, setdiff(phylo$tip.label, local.com$community))
+test.dist <- data.frame(cophenetic(local.phy))
+diag(test.dist) <- NA
+min.thresh <- min(test.dist$Ailanthus_altissima, na.rm = T)
+
+n.runs <- 200
+for(i in 1:n.runs){
+  test <- rarefy_phylo_dists('Ailanthus_altissima', test.dist, n.rare = 15)
+  
+  if(test$rare.nnd < min.thresh) warning('You fucked up')
 }

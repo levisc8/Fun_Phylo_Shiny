@@ -237,3 +237,55 @@ make_regional_traits_ktab <- function(traits.data, traits){
   return(out)
   
 }
+
+rarefy_FPD <- function(focal.species, phylo.mat, fun.mat,
+                               metric = c("MPD", "NND"), 
+                               n.resamp = 1000, n.rare) {
+  mpd.tf <- "MPD" %in% metric
+  nnd.tf <- "NND" %in% metric
+  
+  if(mpd.tf){
+    rare.mpd <- rep(NA, n.resamp)
+  }
+  if(nnd.tf){
+    rare.bl <- rep(NA, n.resamp)
+  }
+  
+  diag(dist.mat) <- NA
+  focal.column <- dist.mat[ ,focal.species]
+  
+  for(i in 1:n.resamp){
+    resamp.x <- base::sample(1:length(focal.column),
+                             size = n.rare,
+                             replace = FALSE)
+    
+    if(mpd.tf) {
+      rare.mpd[i] <- mean(focal.column[resamp.x], na.rm = TRUE)
+    }
+    if(nnd.tf){
+      rare.bl[i] <- min(focal.column[resamp.x], na.rm = TRUE)
+    }
+  }
+  
+  out <- list()
+  if(mpd.tf){
+    out$rare.mpd <- mean(rare.mpd)
+  }
+  if(nnd.tf){
+    out$rare.nnd <- mean(rare.bl)
+  }
+  
+  return(out)
+  
+}
+
+
+
+
+
+
+
+
+
+
+
