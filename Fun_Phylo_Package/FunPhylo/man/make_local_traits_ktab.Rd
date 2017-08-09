@@ -53,3 +53,6 @@ is. The \code{VarType} output is designed to seamlessly integrate
 with \code{dist.ktab}'s \code{type} argument to allow for effortless
 integration.
 }
+\author{
+Sam Levin
+}

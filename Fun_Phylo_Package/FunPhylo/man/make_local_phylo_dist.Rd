@@ -28,3 +28,6 @@ A phylogenetic distance matrix in the form of a
 Function for creating a phylogenetic distance matrix
 from data that does not require you to subset first.
 }
+\author{
+Sam Levin
+}

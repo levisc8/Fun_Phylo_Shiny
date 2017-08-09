@@ -35,3 +35,6 @@ phylogenetic distance calculation}
 a set number of times so that communities of different sizes can be 
 compared to each other.
 }
+\author{
+Sam Levin
+}

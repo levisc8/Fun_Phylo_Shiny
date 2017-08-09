@@ -20,6 +20,8 @@
 #' @param p The power to raise each distance value to in the functional-
 #' phylogenetic distance calculation
 #' 
+#' @author Sam Levin
+#' 
 #' @importFrom magrittr %>%
 #' @export
 #' 
@@ -56,7 +58,8 @@ rarefy_FPD <- function(focal.species, phylo.mat, fun.mat,
   
   if(!identical(names(phylo.mat), names(fun.mat)) & 
      !identical(rownames(phylo.mat), rownames(fun.mat))){ 
-    stop('You fucked up')
+    stop('The developer is dumb and has made a mistake.\n',
+         'Email a reproducible example to levisc8@gmail.com')
   }
   fpd <- func_phy_dist(FDist = as.matrix(fun.mat),
                        PDist = as.matrix(phylo.mat),

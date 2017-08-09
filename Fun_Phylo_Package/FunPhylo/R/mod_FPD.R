@@ -18,6 +18,7 @@
 #' \code{FDist} and \code{PDist match}.
 #' 
 #' @seealso \code{\link{rarefy_FPD}}
+#' @author Sam Levin
 #' @export
 
 

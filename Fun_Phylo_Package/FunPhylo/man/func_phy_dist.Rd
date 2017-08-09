@@ -35,3 +35,6 @@ The function does not check to make sure names in
 \seealso{
 \code{\link{rarefy_FPD}}
 }
+\author{
+Sam Levin
+}

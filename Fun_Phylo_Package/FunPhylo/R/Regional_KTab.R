@@ -1,5 +1,24 @@
-
-make_regional_traits_ktab <- function(traits.data, traits){
+#' Make a KTab for a whole data set
+#' 
+#' @description This is very similar to 
+#' \code{make_local_traits_ktab}, but does not subset the data
+#' by default. 
+#' 
+#' @inheritParams make_local_traits_ktab
+#' 
+#' @return A list consisting of 
+#' \itemize{
+#'    \item{\code{KTab}}{The \code{ktab} which can be passed to 
+#'    \code{dist.ktab}}
+#'    \item{\code{VarTypes}}{A character vector that can be passed to 
+#'    \code{dist.ktab}}
+#' }
+#' 
+#' @author Sam Levin
+#' @importFrom ade4 prep.binary prep.circular ktab.list.df
+#' @export
+#' 
+make_regional_traits_ktab <- function(trait.data, traits){
 
   ContTraitNames <- c('SLA','Tough','WoodDens','Height')
 

@@ -17,6 +17,8 @@
 #' @return A phylogenetic distance matrix in the form of a
 #' \code{data.frame}
 #' 
+#' @author Sam Levin
+#' 
 #' @importFrom magrittr %>%
 #' @importFrom dplyr filter
 #' @importFrom ape drop.tip

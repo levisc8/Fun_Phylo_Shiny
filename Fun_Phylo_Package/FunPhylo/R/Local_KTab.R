@@ -32,6 +32,10 @@
 #'    \code{dist.ktab}}
 #' }
 #' 
+#' @author Sam Levin
+#' @importFrom magrittr %>%
+#' @importFrom dplyr filter
+#' @importFrom ade4 prep.circular prep.binary ktab.list.df
 #' @export
 #' 
 
