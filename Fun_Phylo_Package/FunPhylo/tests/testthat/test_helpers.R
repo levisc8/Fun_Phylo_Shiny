@@ -1,28 +1,24 @@
 # tests for server
 
-#rm(list = ls(all = T))
+rm(list = ls(all = T))
 #library(shiny)
-library(tidyverse)
-library(magrittr)
-library(ade4)
-library(ape)
-library(pez)
+library(FunPhylo)
 #source('helpers.R')
 
-load('data/data_list.RData')
+data('tyson')
 
-communities <- data$communities
-phylo <- data$phylo
-tyson <- data$spp.list
-demo <- data$demo.data
-trait.data <- data$traits
+communities <- tyson$communities
+phylo <- tyson$phylo
+tyson <- tyson$spp.list
+demog <- tyson$demo.data
+trait.tyson <- tyson$traits
 
 traits <- names(trait.data[-1])
 # test trait ktab functions
 for(i in 1:10){
   trait.test <- traits[base::sample(1:24,9)]
   
-  for(x in unique(demo$Species)){
+  for(x in unique(demog$Species)){
     cat(x,"    ", i,'\n')
     test.local <- make_local_traits_ktab(x, community.data = communities,
                                          trait.data = trait.data, traits = traits)
@@ -36,25 +32,18 @@ for(i in 1:10){
 
 # test rarefying functions
 
-local.com <- filter(communities, exotic_species == 'Ailanthus_altissima')
-
-local.phy <- drop.tip(phylo, setdiff(phylo$tip.label, local.com$community))
-test.dist <- data.frame(cophenetic(local.phy))
-
-for(i in seq(0,1,.05)){
-  demo[ ,paste("a_",i, sep = "")] <- NA
-}
-
-for(x in unique(demo$Species)){
-  for(a in seq(0,1,.05)){
-    test <- rarefy_FPD(x, make_local_phylo_dist(x, communities, phylo),
-                       make_local_trait_dist(x, communities, trait.data,
-                                             traits,
-                                             scale = "scaledBYrange"),
-                       n.rare = 11, a = a, p = 2)
-    demo[demo$Species == x, paste("a_", a,sep="")] <- test$rare.nnd
-    
-  }
+for(x in unique(demog$Species)){
+  phylo.mat <- make_local_phylo_dist(x, communities, phylo)
+  fun.mat <- FunPhylo:::make_local_trait_dist(x, communities, trait.data,
+                                              traits = traits,
+                                              scale = 'scaledBYrange')
+  
+  FPD <- rarefy_FPD(x, phylo.mat = phylo.mat,
+                    fun.mat = fun.mat,
+                    n.rare = 11, a = .5, p = 2)
+  
+  demog[demog$Species == x, 'out'] <- as.numeric(FPD$rare.nnd)
+  
 }
 
 
