@@ -20,15 +20,16 @@ shinyUI(fluidPage(
                                          "Regional (County Level)")),
              
              radioButtons("met.phylo", label = "Phylogenetic Metric",
-                          choices = list("Nearest Neighbor Distance",
-                                         "Mean Pairwise Distance")),
+                          choiceNames = c("Nearest Neighbor Distance",
+                                         "Mean Pairwise Distance"),
+                          choiceValues = c('NND', 'MPD')),
              
              radioButtons("met.inv", label = "Metric of Invasiveness",
-                          choices = list("Per-capita Growth Rates",
-                                         "Expert Classification")),
+                          choices = list("Per-capita Growth Rates" = 'lambda',
+                                         "Expert Classification" = 'mepp')),
              
              sliderInput("Little.a", "Phylogenetic Scaling Parameter",
-                         min = 0, max = 1, value = 0.5, step = .05)),
+                         min = 0, max = 1, value = .5, step = .05)),
              
              helpText('This analysis follows the methods described',
                       ' in Cadotte et al 2013 and Thorn et al 2015.',
@@ -49,21 +50,9 @@ shinyUI(fluidPage(
                                           'Wood Density (if applicable)' = "WoodDens", 
                                           'Flower Period' = "Flower.Period", 
                                           'Clonal' = "Clonal",
-                                          'Legume' = "N_Fixer", 
-                                          'Growth Form' = c("Stemmed_Herb",
-                                                            "Tree", "Rosette",
-                                                            "Vine", "SubShrub",
-                                                            "Shrub",
-                                                            "Elongated_Leafy_Rhizomatous"),
-                                          'Dispersal Mechanism' = c("Subterranean",
-                                                                    "Unassisted",
-                                                                    "Wind",
-                                                                    "ExoZoochory",
-                                                                    "EndoZoochory",
-                                                                    "Ballistic",
-                                                                    "Hoarding",
-                                                                    "Myrmecochory",               
-                                                                    "Water")))
+                                          'Legume' = "N_Fixer" 
+                                          ),
+                           selected = c('SLA', 'Height', 'Tough','Flower.Period'))
 
     ),
     mainPanel(
