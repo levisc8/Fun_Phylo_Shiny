@@ -16,8 +16,8 @@ shinyUI(fluidPage(
   fluidRow(
       column(3,
              radioButtons("scale", label = "Spatial Scale",
-                          choices = list("Local (Plot Level)",
-                                         "Regional (County Level)")),
+                          choices = list("Local (Plot Level)" = 'loc',
+                                         "Regional (County Level)" = 'reg')),
              
              radioButtons("met.phylo", label = "Phylogenetic Metric",
                           choiceNames = c("Nearest Neighbor Distance",
@@ -49,14 +49,14 @@ shinyUI(fluidPage(
                                           'Tough' = "Tough",
                                           'Wood Density (if applicable)' = "WoodDens", 
                                           'Flower Period' = "Flower.Period", 
-                                          'Clonal' = "Clonal",
-                                          'Legume' = "N_Fixer" 
-                                          ),
+                                          'Growth Form' = 'Growth_Form',
+                                          'Dispersal Mechanism' = 'Disp_Mech'),
                            selected = c('SLA', 'Height', 'Tough','Flower.Period'))
 
     ),
     mainPanel(
-      plotOutput('figure1')
+      plotOutput('figure1')#,
+      # tableOutput('traits')
     )
     
   )
