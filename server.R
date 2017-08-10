@@ -129,7 +129,7 @@ shinyServer(function(input, output) {
                              round(lmdat$coefficients[2, 4], 4), sep = ""),
                x = textx, y = texty + .3) +
       scale_x_continuous(paste(x.lab, input$met.phylo, sep = "")) +
-      scale_y_continuous("Lambda (Competitor Removal) / Lambda (Control)")
+      scale_y_continuous("Strength of Competitive Interactions")
     
     
     Fig
@@ -200,7 +200,7 @@ shinyServer(function(input, output) {
                                   sep = ""),
                     x = textx, y = texty + .3) +
            scale_x_continuous(paste(x.lab, input$met.phylo, sep = "")) +
-           scale_y_continuous("Lambda (Competitor Removal) / Lambda (Control)")
+           scale_y_continuous("Strength of Competitive Interactions")
     
     Fig
   })
