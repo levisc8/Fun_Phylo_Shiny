@@ -10,7 +10,7 @@ library(shiny)
 shinyUI(fluidPage(
 
   # Application title
-  titlePanel("Functional-Phylogenetic Distances"),
+  titlePanel("Invasive Plant Species in "),
 
   # Sidebar with a slider input for number of bins
   fluidRow(
@@ -31,12 +31,14 @@ shinyUI(fluidPage(
              sliderInput("Little.a", "Phylogenetic Scaling Parameter",
                          min = 0, max = 1, value = .5, step = .05)),
              
-             helpText('This analysis follows the methods described',
-                      ' in Cadotte et al 2013 and Thorn et al 2015.',
+             helpText('This app employs the methods described',
+                      ' in Cadotte et al 2013 and Thorn et al 2015',
+                      ' to demonstrate how the relationship between',
+                      ' novelty and invasiveness is mediated by competition.',
                       ' The goal here is to create an interactive',
                       ' version of that analysis that allows a user ',
-                      'to explore how previously unexposed relationships',
-                      ' can become important when incorporating information ',
+                      'to explore how relationships can change when ',
+                      'incorporating information ',
                       'on both phylogeny and functional traits. Future directions',
                       'include generalizing this app so other users ',
                       'can put in their own data and phylogeny and',
