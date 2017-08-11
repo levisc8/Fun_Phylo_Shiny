@@ -1,8 +1,4 @@
 
-# code that has to run regardless of user goes here
-# e.g. data assignment (though that may change if
-# generalized for other users). 
-
 library(shiny)
 library(FunPhylo)
 library(ggplot2)

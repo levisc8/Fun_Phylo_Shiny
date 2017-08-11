@@ -12,6 +12,7 @@ shinyUI(fluidPage(
   # Application title
   titlePanel("Invasive Plant Species and the Role of Competition and Novelty"),
 
+
   # Sidebar with a slider input for number of bins
   fluidRow(
       column(3,
