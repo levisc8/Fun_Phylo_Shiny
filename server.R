@@ -284,7 +284,146 @@ shinyServer(function(input, output) {
     
   })
   
-  regression_switch <- reactive({
+  create_regional_r2_a_plot <- reactive({
+
+    traits <- create_trait_list()
+    
+    a_seq <- seq(0, 1, length.out = input$res)
+    mod.data <- demog
+    
+    mod.data[ , paste0('nna_', a_seq)] <- NA
+    mod.data[ , paste0('mpa_', a_seq)] <- NA
+    
+    R2dat <- data.frame(A = a_seq,
+                        NND = rep(NA, input$res),
+                        MPD = rep(NA, input$res))
+    
+    spp.list$Species <- gsub("-", "\\.", spp.list$Species)
+    trait.data <- trait.data[trait.data$Species.Name %in% spp.list$Species, ]
+    trait.data$Species.Name <- gsub("-", "\\.", trait.data$Species.Name)
+    
+    phylo.mat <- make_regional_phylo_dist(trait.data$Species.Name, phylo = phylo)
+    fun.mat <- make_regional_trait_dist(trait.data, traits) %>% as.matrix %>%
+      as.data.frame()
+    
+    phylo.mat <- phylo.mat[rownames(phylo.mat) %in% sort(rownames(fun.mat)),
+                           names(phylo.mat) %in% sort(names(fun.mat))] %>%
+      .[sort(rownames(.)), sort(names(.))]
+    fun.mat <- fun.mat[sort(rownames(fun.mat)), sort(names(fun.mat))]
+    
+ 
+    for(a in a_seq){
+      i <- which(a_seq == a)
+      FPD <- func_phy_dist(FDist = fun.mat, 
+                           PDist = phylo.mat,
+                           phyloWeight = a,
+                           p = 2) %>% data.frame()
+      diag(FPD) <- NA
+      for(x in unique(demog$Species)){
+        mod.data[mod.data$Species == x, paste0('nna_', a)] <- min(FPD[ ,x],
+                                                                  na.rm = T)
+        mod.data[mod.data$Species == x, paste0('mpa_', a)] <- mean(FPD[ ,x],
+                                                                   na.rm = T)
+      }
+      nnd.form <- as.formula(paste0('ESCR2 ~ nna_', a,'+ CRBM'))
+      mpd.form <- as.formula(paste0('ESCR2 ~ mpa_', a,'+ CRBM'))
+      
+      R2dat$NND[i] <- r2_calc(mod.data, nnd.form)
+      R2dat$MPD[i] <- r2_calc(mod.data, mpd.form)
+    }
+      
+    Fig <- ggplot(data = R2dat, aes(x = A)) +
+      theme_pander() +
+      geom_point(aes(y = NND, color = 'NND')) +
+      geom_line(aes(y = NND, color = 'NND')) + 
+      geom_point(aes(y = MPD, color = 'MPD')) +
+      geom_line(aes(y = MPD, color = 'MPD')) +
+      scale_x_continuous('Phylogenetic Scaling Parameter', limits = c(0,1)) +
+      scale_y_continuous('Adjusted R-squared', limits = c(0,1)) + 
+      scale_color_manual('Metric', 
+                         breaks = c("NND", "MPD"),
+                         values = c("red", "blue"))
+    
+  })
+  
+  create_local_r2_a_plot <- reactive({
+    traits <- create_trait_list()
+    
+    a_seq <- seq(0, 1, length.out = input$res)
+    mod.data <- demog
+    
+    mod.data[ , paste0('nna_', a_seq)] <- NA
+    mod.data[ , paste0('mpa_', a_seq)] <- NA
+    
+    R2dat <- data.frame(A = a_seq,
+                        NND = rep(NA, input$res),
+                        MPD = rep(NA, input$res))
+    
+    
+    for(x in unique(demog$Species)){
+      
+      phylo.mat <- make_local_phylo_dist(x, communities, phylo)
+      fun.mat <- make_local_trait_dist(x, communities, trait.data,
+                                       traits = traits,
+                                       scale = 'scaledBYrange')
+
+      for(a in a_seq){
+        FPD <- rarefy_FPD(x, phylo.mat = phylo.mat,
+                          fun.mat = fun.mat,
+                          n.rare = 11, a = a, p = 2)
+        
+          mod.data[mod.data$Species == x, paste0('nna_', a)] <- FPD$rare.nnd
+          mod.data[mod.data$Species == x, paste0('mpa_', a)] <- FPD$rare.mpd
+          
+      }
+    }
+    
+    for(a in a_seq){
+      i <- which(a_seq == a)
+      nnd.form <- as.formula(paste('ESCR2 ~ ', paste0('nna_', a), " + CRBM"))
+      mpd.form <- as.formula(paste('ESCR2 ~ ', paste0('mpa_', a), " + CRBM"))
+      
+      R2dat$NND[i] <- r2_calc(mod.data, nnd.form)
+      R2dat$MPD[i] <- r2_calc(mod.data, mpd.form) 
+    }
+    
+    
+
+    
+    Fig <- ggplot(data = R2dat, aes(x = A)) +
+      theme_pander() +
+      geom_point(aes(y = NND, color = 'NND')) +
+      geom_line(aes(y = NND, color = 'NND')) + 
+      geom_point(aes(y = MPD, color = 'MPD')) +
+      geom_line(aes(y = MPD, color = 'MPD')) +
+      scale_x_continuous('Phylogenetic Scaling Parameter', limits = c(0,1)) +
+      scale_y_continuous('Adjusted R-squared', limits = c(0,1)) + 
+      scale_color_manual('Metric', 
+                         breaks = c("NND", "MPD"),
+                         values = c("red", "blue"))
+    
+
+  })
+
+  UI_Input_switch <- reactive({
+    x <- switch(input$plot,
+                'lil.a' = r2_a_switch(),
+                'FS' = FS_switch())
+    
+    x
+  })
+  
+  
+  r2_a_switch <- reactive({
+    scale <- input$scale
+    x <- switch(scale,
+                'reg' = create_regional_r2_a_plot(),
+                'loc' = create_local_r2_a_plot())
+    
+    x
+  })
+  
+  FS_switch <- reactive({
     metScaleSwitch <- paste(input$met.inv, input$scale, sep = "_")
     x <- switch(metScaleSwitch,
            "lambda_reg" = create_lin_regional_fig(),
@@ -300,7 +439,7 @@ shinyServer(function(input, output) {
   
   output$figure1 <- renderPlot({
     
-    Fig <- regression_switch()
+    Fig <- UI_Input_switch()
     
     print(Fig)
       
