@@ -6,6 +6,7 @@
 #
 
 library(shiny)
+library(markdown)
 
 shinyUI(fluidPage(
 
