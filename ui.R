@@ -18,12 +18,13 @@ shinyUI(fluidPage(
            selectInput("plot", "Plot Type", 
                        choices = list('Focal Species' = 'FS',
                                       'R^2 ~ a' = 'lil.a'),
-                       selectize = FALSE),
-           
+                       selectize = FALSE)),
+    column(3,     
            radioButtons("scale", label = "Spatial Scale",
                         choices = list("Local (Plot Level)" = 'loc',
                                        "Regional (County Level)" = 'reg'),
-                        selected = 'loc'),
+                        selected = 'loc')),
+    column(3,
            checkboxGroupInput("traits", label = "Functional Traits",
                               choices = list('SLA' = "SLA", 'Height' = "Height",
                                              'Tough' = "Tough",
@@ -32,7 +33,8 @@ shinyUI(fluidPage(
                                              'Growth Form' = 'Growth_Form',
                                              'Dispersal Mechanism' = 'Disp_Mech'),
                               selected = c('SLA', 'Height', 
-                                           'Tough','Flower.Period')))
+                                           'Tough','Flower.Period'),
+                              inline = TRUE))
   ),
   # Sidebar with a slider input for number of bins
   conditionalPanel(condition = "input.plot == 'FS'",
@@ -41,12 +43,12 @@ shinyUI(fluidPage(
              radioButtons("met.phylo", label = "Phylogenetic Metric",
                           choiceNames = c("Nearest Neighbor Distance",
                                           "Mean Pairwise Distance"),
-                          choiceValues = c('NND', 'MPD')),
-             
+                          choiceValues = c('NND', 'MPD'))),
+      column(3,
              radioButtons("met.inv", label = "Metric of Invasiveness",
                           choices = list("Per-capita Growth Rates" = 'lambda',
-                                         "Expert Classification" = 'mepp')),
-             
+                                         "Expert Classification" = 'mepp'))),
+      column(3,      
              sliderInput("Little.a", "Phylogenetic Scaling Parameter",
                          min = 0, max = 1, value = .5, step = .05))
       
