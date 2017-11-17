@@ -92,7 +92,7 @@ shinyServer(function(input, output) {
                         n.rare = 11, a = input$Little.a, p = 2,
                         abundance.weighted = input$AW,
                         community.data = communities)
-      
+      # make sure we save the requested metric
       if('NND' %in% input$met.phylo){
         out <- c(out, ifelse(input$log,
                              log(as.numeric(FPD$rare.nnd)),
@@ -105,7 +105,7 @@ shinyServer(function(input, output) {
       }
         
     }
-
+    # create data frame and formula for model
     dat <- mutate(demog, out = out)
     if(input$CRBM){
       lm.form <- as.formula(paste0('ESCR2 ~ out + CRBM'))  
@@ -114,7 +114,7 @@ shinyServer(function(input, output) {
     }
     
     lmdat <- summary(lm(lm.form, data = dat))
-    
+    # extract data needed for plotting
     slope <- coef(lmdat)[2]
     int <- coef(lmdat)[1]
     textx <- max(dat$out) - ((max(dat$out) - min(dat$out)) / 8) 
@@ -124,7 +124,7 @@ shinyServer(function(input, output) {
     #   textx <- textx - (1.1-input$Little.a * .1)
     # }
     
-    
+    # X-axis label changes depending on little a
     if(input$Little.a == 0){
       x.lab <- "Functional "
     } else if(input$Little.a == 1){
@@ -132,7 +132,7 @@ shinyServer(function(input, output) {
     } else{
       x.lab <- "Functional-Phylogenetic "
     }
-    
+    # Plot!
     Fig <- ggplot(data = dat, aes(x = out, y = ESCR2)) + 
       theme_pander() + 
       geom_point() +
@@ -157,7 +157,7 @@ shinyServer(function(input, output) {
     out <- numeric()
     traits <- create_trait_list()
     
-    
+    # make sure that trait names match phylogeny names
     spp.list$Species <- gsub("-", "\\.", spp.list$Species)
     trait.data <- trait.data[trait.data$Species.Name %in% spp.list$Species, ]
     trait.data$Species.Name <- gsub("-", "\\.", trait.data$Species.Name)
@@ -165,7 +165,7 @@ shinyServer(function(input, output) {
     phylo.mat <- make_regional_phylo_dist(trait.data$Species.Name, phylo = phylo)
     fun.mat <- make_regional_trait_dist(trait.data, traits) %>% as.matrix %>%
                as.data.frame()
-    
+    # make sure phylo distances match functional distances
     phylo.mat <- phylo.mat[rownames(phylo.mat) %in% sort(rownames(fun.mat)),
                            names(phylo.mat) %in% sort(names(fun.mat))] %>%
       .[sort(rownames(.)), sort(names(.))]
@@ -176,7 +176,7 @@ shinyServer(function(input, output) {
                          phyloWeight = input$Little.a,
                          p = 2) %>% data.frame()
     diag(FPD) <- NA
-    
+    # Store correct metric
     for(x in unique(demog$Species)){
       if("MPD" %in% input$met.phylo){
         out <- c(out, mean(FPD[ ,x], na.rm = TRUE))
@@ -184,7 +184,7 @@ shinyServer(function(input, output) {
         out <- c(out, min(FPD[ ,x], na.rm = TRUE))
       }
     }
-    
+    # create data frame and models
     demog <- mutate(demog, out = out)
     
     if(input$CRBM){
@@ -194,11 +194,12 @@ shinyServer(function(input, output) {
     }
     lmdat <- summary(lm(lm.form, data = demog))
     
+    # extract data for plots
     slope <- coef(lmdat)[2]
     int <- coef(lmdat)[1]
     textx <- max(demog$out)-.03
     texty <- max(demog$ESCR2) -.5
-    
+    # x-axis label changes depending on little a
     if(input$Little.a == 0){
       x.lab <- "Functional "
     } else if(input$Little.a == 1){
@@ -206,7 +207,7 @@ shinyServer(function(input, output) {
     } else{
       x.lab <- "Functional-Phylogenetic "
     }
-    
+    # plot!
     Fig <- ggplot(demog, aes(x = out, y = ESCR2)) + 
            theme_pander() +
            geom_point() + 
@@ -232,7 +233,10 @@ shinyServer(function(input, output) {
     traits <- create_trait_list()
     
     
-    Exotics <- dplyr::filter(spp.list, Exotic == 1 & Monocot == 0)
+    Exotics <- dplyr::filter(spp.list, 
+                             Exotic == 1 &
+                               Monocot == 0 &
+                               Species != 'Cerastium_spp.')
     Exotics$Species <- gsub("-", "\\.", Exotics$Species)
     trait.data <- trait.data[trait.data$Species.Name %in% Exotics$Species, ]
     trait.data$Species.Name <- gsub("-", "\\.", trait.data$Species.Name)
@@ -269,8 +273,8 @@ shinyServer(function(input, output) {
       
     } else {
     
-      phylo.mat <- make_regional_phylo_dist(Exotics$Species, phylo)
-      phylo.mat <- phylo.mat/max(phylo.mat)
+      phylo.mat <- cophenetic(phylo) %>% data.frame()
+      # phylo.mat <- phylo.mat/max(phylo.mat)
       diag(phylo.mat) <- NA
       for(x in unique(Exotics$Species)){
         if("MPD" %in% input$met.phylo){
@@ -284,12 +288,14 @@ shinyServer(function(input, output) {
     }
     
     Exotics <- mutate(Exotics, out = out)
-    n <- dim(Exotics)[1]
+    n <- length(unique(Exotics$Species))
     Exotics$Invasive <- as.numeric(Exotics$Invasive)
     
     if(input$Little.a == 0) x.lab <- "Functional "
     
-    lmdat <- summary(glm(as.numeric(Invasive) ~ out, family = binomial(), data = Exotics))
+    lmdat <- summary(glm(as.numeric(Invasive) ~ out,
+                         family = binomial(),
+                         data = Exotics))
     
     textx <- max(Exotics$out)-.03
     texty <- .1

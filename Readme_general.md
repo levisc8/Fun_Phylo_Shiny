@@ -8,6 +8,6 @@ Note that whenever `Scale` is set to `Local`, herbaceous focal species will only
 
 Additionally, some communities had few members with overlapping trait data. For example, some of the species might have plant height data, but no data on SLA or toughness. In this case, the underlying code returns `NA`. I've set it to impute mean distances from the community wide matrix in these cases as this is a general way of dealing with missing data that doesn't impose the analytical constraints that phylogenetic imputation methods might. The app should return a warning if this is the case. 
 
-Finally, `Growth Form` corresponds to a suite of dummy variables vc woody status, type of plant (See Perez-Harguindeguy 2013), and N fixation. `Dispersal Mechanism` includes information on predominant means of sexual reproduction and whether or not the species is clonal. `Flower Period` is based on the beginning of flowering in Missouri. For further questions, please contact me at <levisc8@gmail.com>. 
+Finally, `Growth Form` corresponds to a suite of dummy variables which include woody status, type of plant (See Perez-Harguindeguy 2013), and N fixation. `Dispersal Mechanism` includes information on predominant means of sexual reproduction and whether or not the species is clonal. `Flower Period` is based on the beginning of flowering in Missouri. For further questions, please contact me at <levisc8@gmail.com>. 
 
 Enjoy the app!
