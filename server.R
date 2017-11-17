@@ -15,6 +15,10 @@ trait.data <- tyson$traits
 
 shinyServer(function(input, output) {
   
+  # Creates list of traits based on inputs.
+  # Growth Form and dispersal mechanism are actually 
+  # a combination of many dummy variables that describe the levels
+  # they can take
   create_trait_list <- reactive({
     
     if(!"Disp_Mech" %in% input$traits &
@@ -70,7 +74,7 @@ shinyServer(function(input, output) {
     }
     traits
   })
-  
+  # reactive to create local ESCR~Novelty+CRBM data
   create_local_fig <- reactive({
     out <- numeric()
     
@@ -84,25 +88,42 @@ shinyServer(function(input, output) {
       
       FPD <- rarefy_FPD(x, phylo.mat = phylo.mat,
                         fun.mat = fun.mat,
-                        n.rare = 11, a = input$Little.a, p = 2)
+                        metric = input$met.phylo,
+                        n.rare = 11, a = input$Little.a, p = 2,
+                        abundance.weighted = input$AW,
+                        community.data = communities)
       
-      if("NND" %in% input$met.phylo){
-        out <- c(out, as.numeric(FPD$rare.nnd))
+      if('NND' %in% input$met.phylo){
+        out <- c(out, ifelse(input$log,
+                             log(as.numeric(FPD$rare.nnd)),
+                             as.numeric(FPD$rare.nnd)))
       }
       if('MPD' %in% input$met.phylo){
-        out <- c(out, as.numeric(FPD$rare.mpd))
+        out <- c(out, ifelse(input$log,
+                             log(as.numeric(FPD$rare.mpd)),
+                             as.numeric(FPD$rare.mpd)))
       }
         
     }
 
     dat <- mutate(demog, out = out)
+    if(input$CRBM){
+      lm.form <- as.formula(paste0('ESCR2 ~ out + CRBM'))  
+    } else {
+      lm.form <- as.formula(paste0('ESCR2 ~ out'))
+    }
     
-    lmdat <- summary(lm(ESCR2 ~ out + CRBM, data = dat))
+    lmdat <- summary(lm(lm.form, data = dat))
     
     slope <- coef(lmdat)[2]
     int <- coef(lmdat)[1]
-    textx <- max(dat$out)-.03
+    textx <- max(dat$out) - ((max(dat$out) - min(dat$out)) / 8) 
     texty <- max(dat$ESCR2) -.5
+    
+    # if(input$log){
+    #   textx <- textx - (1.1-input$Little.a * .1)
+    # }
+    
     
     if(input$Little.a == 0){
       x.lab <- "Functional "
@@ -166,7 +187,12 @@ shinyServer(function(input, output) {
     
     demog <- mutate(demog, out = out)
     
-    lmdat <- summary(lm(ESCR2 ~ out + CRBM, data = demog))
+    if(input$CRBM){
+      lm.form <- as.formula(paste0('ESCR2 ~ out + CRBM'))  
+    } else {
+      lm.form <- as.formula(paste0('ESCR2 ~ out'))
+    }
+    lmdat <- summary(lm(lm.form, data = demog))
     
     slope <- coef(lmdat)[2]
     int <- coef(lmdat)[1]
@@ -325,12 +351,29 @@ shinyServer(function(input, output) {
         mod.data[mod.data$Species == x, paste0('mpa_', a)] <- mean(FPD[ ,x],
                                                                    na.rm = T)
       }
-      nnd.form <- as.formula(paste0('ESCR2 ~ nna_', a,'+ CRBM'))
-      mpd.form <- as.formula(paste0('ESCR2 ~ mpa_', a,'+ CRBM'))
+      
+      if(input$CRBM){
+        nnd.form <- as.formula(paste0('ESCR2 ~ nna_', a,'+ CRBM'))
+        mpd.form <- as.formula(paste0('ESCR2 ~ mpa_', a,'+ CRBM'))
+      } else {
+        nnd.form <- as.formula(paste0('ESCR2 ~ nna_', a))
+        mpd.form <- as.formula(paste0('ESCR2 ~ mpa_', a))
+      }
       
       R2dat$NND[i] <- r2_calc(mod.data, nnd.form)
       R2dat$MPD[i] <- r2_calc(mod.data, mpd.form)
     }
+    
+    maxr2 <- max(R2dat[ ,2:3])
+    if(maxr2 %in% R2dat$MPD) {
+      maxr2met <- 'MPD'
+      maxr2A <- R2dat[which(R2dat$MPD == maxr2), 'A']
+    } else if(maxr2 %in% R2dat$NND) {
+      maxr2met <- 'NND'
+      maxr2A <- R2dat[which(R2dat$NND == maxr2), 'A']
+      
+    }
+    maxr2A <- round(maxr2A, 4)
       
     Fig <- ggplot(data = R2dat, aes(x = A)) +
       theme_pander() +
@@ -342,7 +385,16 @@ shinyServer(function(input, output) {
       scale_y_continuous('Adjusted R-squared', limits = c(0,1)) + 
       scale_color_manual('Metric', 
                          breaks = c("NND", "MPD"),
-                         values = c("red", "blue"))
+                         values = c("red", "blue")) + 
+      annotate('text',
+               label = paste0('Maximum R^2: ', round(maxr2, 3)),
+               x = .9, y = .95) +
+      annotate('text', 
+               label = paste0('Best a-value: ', maxr2A),
+               x = .9, y = .9) +
+      annotate('text', 
+               label = paste0('Best Performing Metric: ', maxr2met),
+               x = .9, y = .85)
     
   })
   
@@ -370,25 +422,44 @@ shinyServer(function(input, output) {
       for(a in a_seq){
         FPD <- rarefy_FPD(x, phylo.mat = phylo.mat,
                           fun.mat = fun.mat,
-                          n.rare = 11, a = a, p = 2)
+                          n.rare = 11, a = a, p = 2,
+                          abundance.weighted = input$AW,
+                          community.data = communities)
         
-          mod.data[mod.data$Species == x, paste0('nna_', a)] <- FPD$rare.nnd
-          mod.data[mod.data$Species == x, paste0('mpa_', a)] <- FPD$rare.mpd
+          mod.data[mod.data$Species == x, paste0('nna_', a)] <- ifelse(input$log, 
+                                                                       log(FPD$rare.nnd),
+                                                                       FPD$rare.nnd)
+          mod.data[mod.data$Species == x, paste0('mpa_', a)] <- ifelse(input$log,
+                                                                       log(FPD$rare.mpd),
+                                                                       FPD$rare.mpd)
           
       }
     }
     
     for(a in a_seq){
       i <- which(a_seq == a)
-      nnd.form <- as.formula(paste('ESCR2 ~ ', paste0('nna_', a), " + CRBM"))
-      mpd.form <- as.formula(paste('ESCR2 ~ ', paste0('mpa_', a), " + CRBM"))
       
+      if(input$CRBM){
+        nnd.form <- as.formula(paste('ESCR2 ~ ', paste0('nna_', a), " + CRBM"))
+        mpd.form <- as.formula(paste('ESCR2 ~ ', paste0('mpa_', a), " + CRBM"))
+      } else {
+        nnd.form <- as.formula(paste('ESCR2 ~ ', paste0('nna_', a)))
+        mpd.form <- as.formula(paste('ESCR2 ~ ', paste0('mpa_', a)))
+      }
       R2dat$NND[i] <- r2_calc(mod.data, nnd.form)
       R2dat$MPD[i] <- r2_calc(mod.data, mpd.form) 
     }
     
-    
-
+    maxr2 <- max(R2dat[ ,2:3])
+    if(maxr2 %in% R2dat$MPD) {
+      maxr2met <- 'MPD'
+      maxr2A <- R2dat[which(R2dat$MPD == maxr2), 'A']
+    } else if(maxr2 %in% R2dat$NND) {
+      maxr2met <- 'NND'
+      maxr2A <- R2dat[which(R2dat$NND == maxr2), 'A']
+      
+    }
+    maxr2A <- round(maxr2A, 4)
     
     Fig <- ggplot(data = R2dat, aes(x = A)) +
       theme_pander() +
@@ -400,7 +471,17 @@ shinyServer(function(input, output) {
       scale_y_continuous('Adjusted R-squared', limits = c(0,1)) + 
       scale_color_manual('Metric', 
                          breaks = c("NND", "MPD"),
-                         values = c("red", "blue"))
+                         values = c("red", "blue")) + 
+      annotate('text',
+               label = paste0('Maximum R^2: ', round(maxr2, 3)),
+               x = .9, y = .95) +
+      annotate('text', 
+               label = paste0('Best a-value: ', maxr2A),
+               x = .9, y = .9) +
+      annotate('text', 
+               label = paste0('Best Performing Metric: ', maxr2met),
+               x = .9, y = .85)
+               
     
 
   })
@@ -429,14 +510,12 @@ shinyServer(function(input, output) {
            "lambda_reg" = create_lin_regional_fig(),
            'lambda_loc' = create_local_fig(),
            'mepp_reg' = create_log_regional_fig(),
-           'mepp_loc' = stop('Sample size too small to compute a logistic \n',
-                             'regression for focal species only. Please use\n',
-                             'regional spatial scale for expert classification\n',
-                             'results.'))
+           'mepp_loc' = stop('Feature not yet added, but is on the way\n',
+                             'Sorry for the inconvenience!'))
     x
     
   })
-  
+
   output$figure1 <- renderPlot({
     
     Fig <- UI_Input_switch()
@@ -445,6 +524,12 @@ shinyServer(function(input, output) {
       
   })
   
+  # output$table1 <- renderTable({
+  #   
+  #   Table <- knitr::kable(R2dat)
+  #   print(Table)
+  # })
+
 })
 
 

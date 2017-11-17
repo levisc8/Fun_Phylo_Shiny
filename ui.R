@@ -14,17 +14,17 @@ shinyUI(fluidPage(
   titlePanel("Invasive Plant Species and the Role of Competition and Novelty"),
   includeMarkdown('Readme_general.md'),
   fluidRow(
-    column(3,
+    column(2,
            selectInput("plot", "Plot Type", 
-                       choices = list('Focal Species' = 'FS',
-                                      'R^2 ~ a' = 'lil.a'),
+                       choices = list('GLM' = 'FS',
+                                      'Explanatory Power' = 'lil.a'),
                        selectize = FALSE)),
-    column(3,     
+    column(2,     
            radioButtons("scale", label = "Spatial Scale",
                         choices = list("Local (Plot Level)" = 'loc',
                                        "Regional (County Level)" = 'reg'),
                         selected = 'loc')),
-    column(3,
+    column(4,
            checkboxGroupInput("traits", label = "Functional Traits",
                               choices = list('SLA' = "SLA", 'Height' = "Height",
                                              'Tough' = "Tough",
@@ -34,7 +34,20 @@ shinyUI(fluidPage(
                                              'Dispersal Mechanism' = 'Disp_Mech'),
                               selected = c('SLA', 'Height', 
                                            'Tough','Flower.Period'),
-                              inline = TRUE))
+                              inline = TRUE)),
+    column(2, 
+           checkboxInput('AW', label = 'Weight Local Species Abundances',
+                         value = FALSE)),
+    column(2,
+           checkboxInput('log', label = 'Log transform abundance weighted data?'),
+           value = FALSE)
+    
+    
+  ),
+  fluidRow(
+    column(2,
+           checkboxInput('CRBM', label = 'Include Biomass covariate?',
+                         value = TRUE))
   ),
   # Sidebar with a slider input for number of bins
   conditionalPanel(condition = "input.plot == 'FS'",
@@ -59,7 +72,7 @@ shinyUI(fluidPage(
    fluidRow(
      column(3,
             sliderInput("res", label = 'Breaks for Phylogenetic Scaling Parameter',
-                        min = 5, max = 41, value = 21, step = 2)
+                        min = 5, max = 41, value = 11, step = 2)
 
             
      )
@@ -69,7 +82,7 @@ shinyUI(fluidPage(
   ),
     mainPanel(
       plotOutput('figure1')#,
-      # textOutput('traits')
+      #tableOutput('table1')
     )
     
   )
