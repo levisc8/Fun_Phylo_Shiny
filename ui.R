@@ -44,11 +44,7 @@ shinyUI(fluidPage(
     
     
   ),
-  fluidRow(
-    column(2,
-           checkboxInput('CRBM', label = 'Include Biomass covariate?',
-                         value = TRUE))
-  ),
+
   # Sidebar with a slider input for number of bins
   conditionalPanel(condition = "input.plot == 'FS'",
     fluidRow(
