@@ -107,12 +107,8 @@ shinyServer(function(input, output) {
     }
     # create data frame and formula for model
     dat <- mutate(demog, out = out)
-    if(input$CRBM){
-      lm.form <- as.formula(paste0('ESCR2 ~ out + CRBM'))  
-    } else {
-      lm.form <- as.formula(paste0('ESCR2 ~ out'))
-    }
-    
+    lm.form <- as.formula(paste0('ESCR2 ~ out + CRBM'))  
+
     lmdat <- summary(lm(lm.form, data = dat))
     # extract data needed for plotting
     slope <- coef(lmdat)[2]
@@ -187,11 +183,7 @@ shinyServer(function(input, output) {
     # create data frame and models
     demog <- mutate(demog, out = out)
     
-    if(input$CRBM){
-      lm.form <- as.formula(paste0('ESCR2 ~ out + CRBM'))  
-    } else {
-      lm.form <- as.formula(paste0('ESCR2 ~ out'))
-    }
+    lm.form <- as.formula(paste0('ESCR2 ~ out + CRBM'))  
     lmdat <- summary(lm(lm.form, data = demog))
     
     # extract data for plots
@@ -358,13 +350,8 @@ shinyServer(function(input, output) {
                                                                    na.rm = T)
       }
       
-      if(input$CRBM){
-        nnd.form <- as.formula(paste0('ESCR2 ~ nna_', a,'+ CRBM'))
-        mpd.form <- as.formula(paste0('ESCR2 ~ mpa_', a,'+ CRBM'))
-      } else {
-        nnd.form <- as.formula(paste0('ESCR2 ~ nna_', a))
-        mpd.form <- as.formula(paste0('ESCR2 ~ mpa_', a))
-      }
+      nnd.form <- as.formula(paste0('ESCR2 ~ nna_', a,'+ CRBM'))
+      mpd.form <- as.formula(paste0('ESCR2 ~ mpa_', a,'+ CRBM'))
       
       R2dat$NND[i] <- r2_calc(mod.data, nnd.form)
       R2dat$MPD[i] <- r2_calc(mod.data, mpd.form)
@@ -445,13 +432,8 @@ shinyServer(function(input, output) {
     for(a in a_seq){
       i <- which(a_seq == a)
       
-      if(input$CRBM){
-        nnd.form <- as.formula(paste('ESCR2 ~ ', paste0('nna_', a), " + CRBM"))
-        mpd.form <- as.formula(paste('ESCR2 ~ ', paste0('mpa_', a), " + CRBM"))
-      } else {
-        nnd.form <- as.formula(paste('ESCR2 ~ ', paste0('nna_', a)))
-        mpd.form <- as.formula(paste('ESCR2 ~ ', paste0('mpa_', a)))
-      }
+      nnd.form <- as.formula(paste('ESCR2 ~ ', paste0('nna_', a), " + CRBM"))
+      mpd.form <- as.formula(paste('ESCR2 ~ ', paste0('mpa_', a), " + CRBM"))
       R2dat$NND[i] <- r2_calc(mod.data, nnd.form)
       R2dat$MPD[i] <- r2_calc(mod.data, mpd.form) 
     }
