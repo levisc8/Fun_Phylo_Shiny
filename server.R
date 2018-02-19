@@ -130,8 +130,22 @@ shinyServer(function(input, output) {
     }
     # Plot!
     Fig <- ggplot(data = dat, aes(x = out, y = ESCR2)) + 
-      theme_pander() + 
-      geom_point() +
+      theme(panel.background = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            axis.title.y = element_text(size = 20,
+                                        margin = margin(t = 0,
+                                                        l = 0,
+                                                        b = 0,
+                                                        r = 20)),
+            axis.title.x = element_text(size = 20, 
+                                        margin = margin(t = 20,
+                                                        l = 0,
+                                                        b = 0,
+                                                        r = 20)),
+            axis.line = element_line(size = 1.5),
+            axis.text = element_text(size = 16)) + 
+      geom_point(size = 2) +
       geom_abline(slope = slope, intercept = int, colour = 'red') +
       annotate("text", 
                label = paste("Adjusted R^2: ", round(lmdat$adj.r.squared, 4),
@@ -142,7 +156,7 @@ shinyServer(function(input, output) {
                              round(lmdat$coefficients[2, 4], 4), sep = ""),
                x = textx, y = texty + .3) +
       scale_x_continuous(paste(x.lab, input$met.phylo, sep = "")) +
-      scale_y_continuous("Strength of Competitive Interactions")
+      scale_y_continuous(expression(frac(ln(lambda[CR] + 0.5), ln(lambda[Control] + 0.5))))
     
     
     Fig
@@ -201,7 +215,21 @@ shinyServer(function(input, output) {
     }
     # plot!
     Fig <- ggplot(demog, aes(x = out, y = ESCR2)) + 
-           theme_pander() +
+      theme(panel.background = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            axis.title.y = element_text(size = 20,
+                                        margin = margin(t = 0,
+                                                        l = 0,
+                                                        b = 0,
+                                                        r = 20)),
+            axis.title.x = element_text(size = 20, 
+                                        margin = margin(t = 20,
+                                                        l = 0,
+                                                        b = 0,
+                                                        r = 20)),
+            axis.line = element_line(size = 1.5),
+            axis.text = element_text(size = 16))  +
            geom_point() + 
            geom_abline(slope = slope, intercept = int, colour = 'red') +
            annotate("text", 
@@ -214,8 +242,9 @@ shinyServer(function(input, output) {
                                   round(lmdat$coefficients[2, 4], 4),
                                   sep = ""),
                     x = textx, y = texty + .3) +
-           scale_x_continuous(paste(x.lab, input$met.phylo, sep = "")) +
-           scale_y_continuous("Strength of Competitive Interactions")
+      scale_x_continuous(paste(x.lab, input$met.phylo, sep = "")) +
+      scale_y_continuous(expression(frac(ln(lambda[CR] + 0.5),
+                                         ln(lambda[Control] + 0.5))))
     
     Fig
   })
@@ -293,7 +322,21 @@ shinyServer(function(input, output) {
     texty <- .1
     
     Fig <- ggplot(data = Exotics, aes(x = out, y = Invasive)) +
-           theme_pander() +
+      theme(panel.background = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            axis.title.y = element_text(size = 20,
+                                        margin = margin(t = 0,
+                                                        l = 0,
+                                                        b = 0,
+                                                        r = 20)),
+            axis.title.x = element_text(size = 20, 
+                                        margin = margin(t = 20,
+                                                        l = 0,
+                                                        b = 0,
+                                                        r = 20)),
+            axis.line = element_line(size = 1.5),
+            axis.text = element_text(size = 16))  +
            geom_point() + 
            stat_smooth(formula = y ~ x,
                        method = "glm", method.args = list(family = "binomial"),
@@ -369,13 +412,29 @@ shinyServer(function(input, output) {
     maxr2A <- round(maxr2A, 4)
       
     Fig <- ggplot(data = R2dat, aes(x = A)) +
-      theme_pander() +
+      theme(panel.background = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            axis.title.y = element_text(size = 20,
+                                        margin = margin(t = 0,
+                                                        l = 0,
+                                                        b = 0,
+                                                        r = 20)),
+            axis.title.x = element_text(size = 20, 
+                                        margin = margin(t = 20,
+                                                        l = 0,
+                                                        b = 0,
+                                                        r = 20)),
+            axis.line = element_line(size = 1.5),
+            axis.text = element_text(size = 16))  +
       geom_point(aes(y = NND, color = 'NND')) +
       geom_line(aes(y = NND, color = 'NND')) + 
       geom_point(aes(y = MPD, color = 'MPD')) +
       geom_line(aes(y = MPD, color = 'MPD')) +
       scale_x_continuous('Phylogenetic Scaling Parameter', limits = c(0,1)) +
-      scale_y_continuous('Adjusted R-squared', limits = c(0,1)) + 
+      scale_y_continuous(expression(paste('Adjusted ', R^2)),
+                         limits = c(-0.2 , 1.2),
+                         breaks = seq(0, 1, 0.2)) +
       scale_color_manual('Metric', 
                          breaks = c("NND", "MPD"),
                          values = c("red", "blue")) + 
@@ -450,13 +509,29 @@ shinyServer(function(input, output) {
     maxr2A <- round(maxr2A, 4)
     
     Fig <- ggplot(data = R2dat, aes(x = A)) +
-      theme_pander() +
+      theme(panel.background = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            axis.title.y = element_text(size = 20,
+                                        margin = margin(t = 0,
+                                                        l = 0,
+                                                        b = 0,
+                                                        r = 20)),
+            axis.title.x = element_text(size = 20, 
+                                        margin = margin(t = 20,
+                                                        l = 0,
+                                                        b = 0,
+                                                        r = 20)),
+            axis.line = element_line(size = 1.5),
+            axis.text = element_text(size = 16))  +
       geom_point(aes(y = NND, color = 'NND')) +
       geom_line(aes(y = NND, color = 'NND')) + 
       geom_point(aes(y = MPD, color = 'MPD')) +
       geom_line(aes(y = MPD, color = 'MPD')) +
       scale_x_continuous('Phylogenetic Scaling Parameter', limits = c(0,1)) +
-      scale_y_continuous('Adjusted R-squared', limits = c(0,1)) + 
+      scale_y_continuous(expression(paste('Adjusted ', R^2)),
+                         limits = c(-0.2 , 1.2),
+                         breaks = seq(0, 1, 0.2)) + 
       scale_color_manual('Metric', 
                          breaks = c("NND", "MPD"),
                          values = c("red", "blue")) + 
