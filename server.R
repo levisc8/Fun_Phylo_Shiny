@@ -15,7 +15,7 @@ trait.data <- tyson$traits
 
 shinyServer(function(input, output) {
   
-  # Creates list of traits based on inputs.
+  # Creates list of traits based on inputs (very inefficiently!)
   # Growth Form and dispersal mechanism are actually 
   # a combination of many dummy variables that describe the levels
   # they can take
@@ -107,8 +107,13 @@ shinyServer(function(input, output) {
     }
     # create data frame and formula for model
     dat <- mutate(demog, out = out)
-    lm.form <- as.formula(paste0('ESCR2 ~ out + CRBM'))  
-
+    
+    if(input$resp.var == 'sig'){
+      lm.form <- as.formula(paste0('ESCR2 ~ out + CRBM'))  
+    } else {
+      lm.form <- as.formula(paste0('ESCR ~ out + CRBM'))  
+    }
+    
     lmdat <- summary(lm(lm.form, data = dat))
     # extract data needed for plotting
     slope <- coef(lmdat)[2]
@@ -197,7 +202,12 @@ shinyServer(function(input, output) {
     # create data frame and models
     demog <- mutate(demog, out = out)
     
-    lm.form <- as.formula(paste0('ESCR2 ~ out + CRBM'))  
+    if(input$resp.var == 'sig'){
+      lm.form <- as.formula(paste0('ESCR2 ~ out + CRBM'))  
+    } else {
+      lm.form <- as.formula(paste0('ESCR ~ out + CRBM'))  
+    }
+    
     lmdat <- summary(lm(lm.form, data = demog))
     
     # extract data for plots
@@ -393,6 +403,15 @@ shinyServer(function(input, output) {
                                                                    na.rm = T)
       }
       
+      
+      if(input$resp.var == 'sig'){
+        nnd.form <- as.formula(paste0('ESCR2 ~ nna_', a,'+ CRBM'))
+        mpd.form <- as.formula(paste0('ESCR2 ~ mpa_', a,'+ CRBM'))
+      } else {
+        nnd.form <- as.formula(paste0('ESCR ~ nna_', a,'+ CRBM'))
+        mpd.form <- as.formula(paste0('ESCR ~ mpa_', a,'+ CRBM'))
+      }
+      
       nnd.form <- as.formula(paste0('ESCR2 ~ nna_', a,'+ CRBM'))
       mpd.form <- as.formula(paste0('ESCR2 ~ mpa_', a,'+ CRBM'))
       
@@ -491,8 +510,14 @@ shinyServer(function(input, output) {
     for(a in a_seq){
       i <- which(a_seq == a)
       
-      nnd.form <- as.formula(paste('ESCR2 ~ ', paste0('nna_', a), " + CRBM"))
-      mpd.form <- as.formula(paste('ESCR2 ~ ', paste0('mpa_', a), " + CRBM"))
+      if(input$resp.var == 'sig'){
+        nnd.form <- as.formula(paste0('ESCR2 ~ nna_', a,'+ CRBM'))
+        mpd.form <- as.formula(paste0('ESCR2 ~ mpa_', a,'+ CRBM'))
+      } else {
+        nnd.form <- as.formula(paste0('ESCR ~ nna_', a,'+ CRBM'))
+        mpd.form <- as.formula(paste0('ESCR ~ mpa_', a,'+ CRBM'))
+      }
+      
       R2dat$NND[i] <- r2_calc(mod.data, nnd.form)
       R2dat$MPD[i] <- r2_calc(mod.data, mpd.form) 
     }
@@ -567,6 +592,7 @@ shinyServer(function(input, output) {
     x
   })
   
+  # Invasive classification or log response ratio
   FS_switch <- reactive({
     metScaleSwitch <- paste(input$met.inv, input$scale, sep = "_")
     x <- switch(metScaleSwitch,
@@ -587,9 +613,10 @@ shinyServer(function(input, output) {
       
   })
   
+  # Uncomment to render Demography data summary table
   # output$table1 <- renderTable({
-  #   
-  #   Table <- knitr::kable(R2dat)
+  # 
+  #   Table <- knitr::kable(tyson$demo.data)
   #   print(Table)
   # })
 

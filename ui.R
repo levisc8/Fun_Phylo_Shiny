@@ -1,9 +1,5 @@
 
-# This is the user-interface definition of a Shiny web application.
-# You can find out more about building applications with Shiny here:
-#
-# http://shiny.rstudio.com
-#
+# Build bare bones UI for interacting with app
 
 library(shiny)
 library(markdown)
@@ -12,13 +8,21 @@ shinyUI(fluidPage(
 
   # Application title
   titlePanel("Invasive Plant Species and the Role of Competition and Novelty"),
+  # Readme
   includeMarkdown('Readme_general.md'),
+  
+  # options
   fluidRow(
     column(2,
            selectInput("plot", "Plot Type", 
                        choices = list('GLM' = 'FS',
                                       'Explanatory Power' = 'lil.a'),
                        selectize = FALSE)),
+    column(3,
+           radioButtons('resp.var', label = 'Response Type',
+                        choiceNames = c('Significant only',
+                                        'Raw value'),
+                        choiceValues = c('sig', 'raw'))),
     column(2,     
            radioButtons("scale", label = "Spatial Scale",
                         choices = list("Local (Plot Level)" = 'loc',
@@ -48,6 +52,7 @@ shinyUI(fluidPage(
   # Sidebar with a slider input for number of bins
   conditionalPanel(condition = "input.plot == 'FS'",
     fluidRow(
+
       column(3,
              radioButtons("met.phylo", label = "Phylogenetic Metric",
                           choiceNames = c("Nearest Neighbor Distance",
@@ -78,7 +83,7 @@ shinyUI(fluidPage(
   ),
     mainPanel(
       plotOutput('figure1')#,
-      # tableOutput('table1')
+      # tableOutput('table1') uncomment to check demography data summary table
     )
     
   )
