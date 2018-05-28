@@ -2,8 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
-Fun_Phylo_Package/FunPhylo/.gitignore
-Fun_Phylo_Package/FunPhylo/README.html
 rsconnect
 Readme.html
 profile_scripts
+helpers.R
