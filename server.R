@@ -8,12 +8,25 @@ library(ggthemes)
 data('tyson')
 
 communities <- tyson$communities
-phylo <- tyson$phylo
 spp.list <- tyson$spp.list
 demog <- tyson$demo.data
 trait.data <- tyson$traits
+demog$Invasive <- NA_character_
+for(i in seq_len(dim(demog)[1])) {
+  demog$Invasive[i] <- communities$Invasive[communities$community == demog$Species[i]][1]
+}
+
+demog$Invasive <- ifelse(demog$Invasive == 1, "Yes", "No")
 
 shinyServer(function(input, output) {
+  
+  choose_phylo <- reactive(
+    switch(input$phylo,
+           'tank' = tyson$phylo,
+           'all_otb' = tyson$phylo_all,
+           'gb_otb' = tyson$phylo_gb)
+    
+  )
   
   # Creates list of traits based on inputs (very inefficiently!)
   # Growth Form and dispersal mechanism are actually 
@@ -80,9 +93,16 @@ shinyServer(function(input, output) {
     
     traits <- create_trait_list()
     
+    phylo <- choose_phylo()
+    
     for(x in unique(demog$Species)){
-      phylo.mat <- make_local_phylo_dist(x, communities, phylo)
-      fun.mat <- make_local_trait_dist(x, communities, trait.data,
+      
+      
+      use_com <- filter(communities, exotic_species == x &
+                          community %in% phylo$tip.label)
+      
+      phylo.mat <- make_local_phylo_dist(x, use_com, phylo)
+      fun.mat <- make_local_trait_dist(x, use_com, trait.data,
                                        traits = traits,
                                        scale = 'scaledBYrange')
       
@@ -150,7 +170,8 @@ shinyServer(function(input, output) {
                                                         r = 20)),
             axis.line = element_line(size = 1.5),
             axis.text = element_text(size = 16)) + 
-      geom_point(size = 2) +
+      geom_point(aes(color = Invasive),
+                 size = 2) +
       geom_abline(slope = slope, intercept = int, colour = 'red') +
       annotate("text", 
                label = paste("Adjusted R^2: ", round(lmdat$adj.r.squared, 4),
@@ -171,6 +192,7 @@ shinyServer(function(input, output) {
   create_lin_regional_fig <- reactive({
     out <- numeric()
     traits <- create_trait_list()
+    phylo <- choose_phylo()
     
     # make sure that trait names match phylogeny names
     spp.list$Species <- gsub("-", "\\.", spp.list$Species)
@@ -240,7 +262,7 @@ shinyServer(function(input, output) {
                                                         r = 20)),
             axis.line = element_line(size = 1.5),
             axis.text = element_text(size = 16))  +
-           geom_point() + 
+           geom_point(aes(color = Invasive)) + 
            geom_abline(slope = slope, intercept = int, colour = 'red') +
            annotate("text", 
                     label = paste("Adjusted R^2: ",
@@ -262,6 +284,7 @@ shinyServer(function(input, output) {
   create_log_regional_fig <- reactive({
     out <- numeric()
     traits <- create_trait_list()
+    phylo <- choose_phylo()
     
     
     Exotics <- dplyr::filter(spp.list, 
@@ -320,7 +343,7 @@ shinyServer(function(input, output) {
     
     Exotics <- mutate(Exotics, out = out)
     n <- length(unique(Exotics$Species))
-    Exotics$Invasive <- as.numeric(Exotics$Invasive)
+    Exotics$Invasive <- ifelse(Exotics$Invasive == 1, "Yes", "No")
     
     if(input$Little.a == 0) x.lab <- "Functional "
     
@@ -347,7 +370,7 @@ shinyServer(function(input, output) {
                                                         r = 20)),
             axis.line = element_line(size = 1.5),
             axis.text = element_text(size = 16))  +
-           geom_point() + 
+           geom_point(aes(color = Invasive)) + 
            stat_smooth(formula = y ~ x,
                        method = "glm", method.args = list(family = "binomial"),
                        se = FALSE, color = 'red') +
@@ -364,6 +387,7 @@ shinyServer(function(input, output) {
   create_regional_r2_a_plot <- reactive({
 
     traits <- create_trait_list()
+    phylo <- choose_phylo()
     
     a_seq <- seq(0, 1, length.out = input$res)
     mod.data <- demog
@@ -471,6 +495,7 @@ shinyServer(function(input, output) {
   
   create_local_r2_a_plot <- reactive({
     traits <- create_trait_list()
+    phylo <- choose_phylo()
     
     a_seq <- seq(0, 1, length.out = input$res)
     mod.data <- demog
@@ -485,8 +510,12 @@ shinyServer(function(input, output) {
     
     for(x in unique(demog$Species)){
       
-      phylo.mat <- make_local_phylo_dist(x, communities, phylo)
-      fun.mat <- make_local_trait_dist(x, communities, trait.data,
+      
+      use_com <- filter(communities, exotic_species == x &
+                          community %in% phylo$tip.label)
+      
+      phylo.mat <- make_local_phylo_dist(x, use_com, phylo)
+      fun.mat <- make_local_trait_dist(x, use_com, trait.data,
                                        traits = traits,
                                        scale = 'scaledBYrange')
 

@@ -44,7 +44,14 @@ shinyUI(fluidPage(
                          value = FALSE)),
     column(2,
            checkboxInput('log', label = 'Log transform abundance weighted data?'),
-           value = FALSE)
+           value = FALSE),
+    column(3,
+           selectInput("phylo", "Input Phylogney",
+                       choices = list("Tank" = 'tank',
+                                      "AllOTB" = 'all_otb',
+                                      "GBOTB" = 'gb_otb'),
+                       selectize = FALSE)
+           )
     
     
   ),
