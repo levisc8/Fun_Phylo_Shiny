@@ -47,7 +47,7 @@ shinyServer(function(input, output) {
     if("Disp_Mech" %in% input$traits &
        "Growth_Form" %in% input$traits){
       traits <- c(input$traits[-c(which(input$traits == 'Disp_Mech' | 
-                               input$traits == 'Growth_Form'))],
+                                          input$traits == 'Growth_Form'))],
                   "Stemmed_Herb",
                   "Tree", "Rosette",
                   "Vine", "SubShrub",
@@ -87,6 +87,7 @@ shinyServer(function(input, output) {
     }
     traits
   })
+  
   # reactive to create local ESCR~Novelty+CRBM data
   create_local_fig <- reactive({
     out <- numeric()
@@ -112,7 +113,9 @@ shinyServer(function(input, output) {
                         n.rare = 11, a = input$Little.a, p = 2,
                         abundance.weighted = input$AW,
                         community.data = communities)
+      
       # make sure we save the requested metric
+      
       if('NND' %in% input$met.phylo){
         out <- c(out, ifelse(input$log,
                              log(as.numeric(FPD$rare.nnd)),
@@ -123,7 +126,7 @@ shinyServer(function(input, output) {
                              log(as.numeric(FPD$rare.mpd)),
                              as.numeric(FPD$rare.mpd)))
       }
-        
+      
     }
     # create data frame and formula for model
     dat <- mutate(demog, out = out)
@@ -134,10 +137,22 @@ shinyServer(function(input, output) {
       lm.form <- as.formula(paste0('ESCR ~ out + CRBM'))  
     }
     
-    lmdat <- summary(lm(lm.form, data = dat))
+    lm_form <- lm(lm.form, data = dat)
+    lmdat <- summary(lm_form)
+    
     # extract data needed for plotting
-    slope <- coef(lmdat)[2]
-    int <- coef(lmdat)[1]
+    
+    sim_out <- seq(min(dat$out), max(dat$out), length.out = 14)
+    sim_crb <- seq(min(dat$CRBM), max(dat$CRBM), length.out = 14)
+    
+    pred <- predict(lm_form,
+                    data.frame(out = sim_out, CRBM = sim_crb),
+                    type = 'response',
+                    interval = 'confidence',
+                    se.fit = TRUE)$fit %>%
+      data.frame %>% 
+      cbind(., sim_out)
+    
     textx <- max(dat$out) - ((max(dat$out) - min(dat$out)) / 8) 
     texty <- max(dat$ESCR2) -.5
     
@@ -172,7 +187,10 @@ shinyServer(function(input, output) {
             axis.text = element_text(size = 16)) + 
       geom_point(aes(color = Invasive),
                  size = 2) +
-      geom_abline(slope = slope, intercept = int, colour = 'red') +
+      geom_line(data = pred,
+                aes(x = sim_out,
+                    y = fit),
+                colour = 'red') +
       annotate("text", 
                label = paste("Adjusted R^2: ", round(lmdat$adj.r.squared, 4),
                              sep = ""),
@@ -188,7 +206,7 @@ shinyServer(function(input, output) {
     Fig
     
   })
-
+  
   create_lin_regional_fig <- reactive({
     out <- numeric()
     traits <- create_trait_list()
@@ -199,9 +217,14 @@ shinyServer(function(input, output) {
     trait.data <- trait.data[trait.data$Species.Name %in% spp.list$Species, ]
     trait.data$Species.Name <- gsub("-", "\\.", trait.data$Species.Name)
     
-    phylo.mat <- make_regional_phylo_dist(trait.data$Species.Name, phylo = phylo)
-    fun.mat <- make_regional_trait_dist(trait.data, traits) %>% as.matrix %>%
-               as.data.frame()
+    phylo.mat <- make_regional_phylo_dist(trait.data$Species.Name, phylo = phylo) %>%
+      as.matrix() %>%
+      as.data.frame()
+    
+    fun.mat <- make_regional_trait_dist(trait.data, traits) %>% 
+      as.matrix %>%
+      as.data.frame()
+    
     # make sure phylo distances match functional distances
     phylo.mat <- phylo.mat[rownames(phylo.mat) %in% sort(rownames(fun.mat)),
                            names(phylo.mat) %in% sort(names(fun.mat))] %>%
@@ -221,8 +244,6 @@ shinyServer(function(input, output) {
         out <- c(out, min(FPD[ ,x], na.rm = TRUE))
       }
     }
-    # create data frame and models
-    demog <- mutate(demog, out = out)
     
     if(input$resp.var == 'sig'){
       lm.form <- as.formula(paste0('ESCR2 ~ out + CRBM'))  
@@ -230,11 +251,26 @@ shinyServer(function(input, output) {
       lm.form <- as.formula(paste0('ESCR ~ out + CRBM'))  
     }
     
-    lmdat <- summary(lm(lm.form, data = demog))
+    # create data frame and models
+    demog <- dat <- mutate(demog, out = out)
     
-    # extract data for plots
-    slope <- coef(lmdat)[2]
-    int <- coef(lmdat)[1]
+    lm_form <- lm(lm.form, data = dat)
+    lmdat <- summary(lm_form)
+    
+    # extract data needed for plotting
+    
+    sim_out <- seq(min(dat$out), max(dat$out), length.out = 14)
+    sim_crb <- seq(min(dat$CRBM), max(dat$CRBM), length.out = 14)
+    
+    pred <- predict(lm_form,
+                    data.frame(out = sim_out, 
+                               CRBM = sim_crb),
+                    type = 'response',
+                    interval = 'confidence',
+                    se.fit = TRUE)$fit %>%
+      data.frame %>% 
+      cbind(., sim_out)
+    
     textx <- max(demog$out)-.03
     texty <- max(demog$ESCR2) -.5
     # x-axis label changes depending on little a
@@ -262,18 +298,21 @@ shinyServer(function(input, output) {
                                                         r = 20)),
             axis.line = element_line(size = 1.5),
             axis.text = element_text(size = 16))  +
-           geom_point(aes(color = Invasive)) + 
-           geom_abline(slope = slope, intercept = int, colour = 'red') +
-           annotate("text", 
-                    label = paste("Adjusted R^2: ",
-                                  round(lmdat$adj.r.squared, 4),
-                                  sep = ""),
-                    x = textx, y = texty) +
-           annotate("text",
-                    label = paste("Pr(>|t|) for FPD: ", 
-                                  round(lmdat$coefficients[2, 4], 4),
-                                  sep = ""),
-                    x = textx, y = texty + .3) +
+      geom_point(aes(color = Invasive)) + 
+      geom_line(data = pred,
+                aes(x = sim_out,
+                    y = fit),
+                colour = 'red') +
+      annotate("text", 
+               label = paste("Adjusted R^2: ",
+                             round(lmdat$adj.r.squared, 4),
+                             sep = ""),
+               x = textx, y = texty) +
+      annotate("text",
+               label = paste("Pr(>|t|) for FPD: ", 
+                             round(lmdat$coefficients[2, 4], 4),
+                             sep = ""),
+               x = textx, y = texty + .3) +
       scale_x_continuous(paste(x.lab, input$met.phylo, sep = "")) +
       scale_y_continuous(expression(frac(ln(lambda[CR] + 0.5),
                                          ln(lambda[Control] + 0.5))))
@@ -326,7 +365,7 @@ shinyServer(function(input, output) {
       x.lab <- "Function-Phylogenetic "
       
     } else {
-    
+      
       phylo.mat <- cophenetic(phylo) %>% data.frame()
       # phylo.mat <- phylo.mat/max(phylo.mat)
       diag(phylo.mat) <- NA
@@ -370,22 +409,22 @@ shinyServer(function(input, output) {
                                                         r = 20)),
             axis.line = element_line(size = 1.5),
             axis.text = element_text(size = 16))  +
-           geom_point(aes(color = Invasive)) + 
-           stat_smooth(formula = y ~ x,
-                       method = "glm", method.args = list(family = "binomial"),
-                       se = FALSE, color = 'red') +
-           annotate('text', label = paste("Pr(>|t|):", 
-                                          round(coef(lmdat)[2,4], 3)),
-                    x = textx, y = texty, size = 4) +
-           annotate('text', label = paste("Sample Size: ", n, sep = ""),
-                    x = textx, y = texty - .05) +
-           scale_x_continuous(paste(x.lab, input$met.phylo, sep = "")) + 
-           scale_y_continuous("Pr(Invasive)")
+      geom_point(aes(color = Invasive)) + 
+      stat_smooth(formula = y ~ x,
+                  method = "glm", method.args = list(family = "binomial"),
+                  se = FALSE, color = 'red') +
+      annotate('text', label = paste("Pr(>|t|):", 
+                                     round(coef(lmdat)[2,4], 3)),
+               x = textx, y = texty, size = 4) +
+      annotate('text', label = paste("Sample Size: ", n, sep = ""),
+               x = textx, y = texty - .05) +
+      scale_x_continuous(paste(x.lab, input$met.phylo, sep = "")) + 
+      scale_y_continuous("Pr(Invasive)")
     
   })
   
   create_regional_r2_a_plot <- reactive({
-
+    
     traits <- create_trait_list()
     phylo <- choose_phylo()
     
@@ -412,7 +451,7 @@ shinyServer(function(input, output) {
       .[sort(rownames(.)), sort(names(.))]
     fun.mat <- fun.mat[sort(rownames(fun.mat)), sort(names(fun.mat))]
     
- 
+    
     for(a in a_seq){
       i <- which(a_seq == a)
       FPD <- func_phy_dist(FDist = fun.mat, 
@@ -453,7 +492,7 @@ shinyServer(function(input, output) {
       
     }
     maxr2A <- round(maxr2A, 4)
-      
+    
     Fig <- ggplot(data = R2dat, aes(x = A)) +
       theme(panel.background = element_blank(),
             panel.grid.major = element_blank(),
@@ -518,7 +557,7 @@ shinyServer(function(input, output) {
       fun.mat <- make_local_trait_dist(x, use_com, trait.data,
                                        traits = traits,
                                        scale = 'scaledBYrange')
-
+      
       for(a in a_seq){
         FPD <- rarefy_FPD(x, phylo.mat = phylo.mat,
                           fun.mat = fun.mat,
@@ -526,13 +565,13 @@ shinyServer(function(input, output) {
                           abundance.weighted = input$AW,
                           community.data = communities)
         
-          mod.data[mod.data$Species == x, paste0('nna_', a)] <- ifelse(input$log, 
-                                                                       log(FPD$rare.nnd),
-                                                                       FPD$rare.nnd)
-          mod.data[mod.data$Species == x, paste0('mpa_', a)] <- ifelse(input$log,
-                                                                       log(FPD$rare.mpd),
-                                                                       FPD$rare.mpd)
-          
+        mod.data[mod.data$Species == x, paste0('nna_', a)] <- ifelse(input$log, 
+                                                                     log(FPD$rare.nnd),
+                                                                     FPD$rare.nnd)
+        mod.data[mod.data$Species == x, paste0('mpa_', a)] <- ifelse(input$log,
+                                                                     log(FPD$rare.mpd),
+                                                                     FPD$rare.mpd)
+        
       }
     }
     
@@ -598,11 +637,11 @@ shinyServer(function(input, output) {
       annotate('text', 
                label = paste0('Best Performing Metric: ', maxr2met),
                x = .9, y = .85)
-               
     
-
+    
+    
   })
-
+  
   UI_Input_switch <- reactive({
     x <- switch(input$plot,
                 'lil.a' = r2_a_switch(),
@@ -625,30 +664,29 @@ shinyServer(function(input, output) {
   FS_switch <- reactive({
     metScaleSwitch <- paste(input$met.inv, input$scale, sep = "_")
     x <- switch(metScaleSwitch,
-           "lambda_reg" = create_lin_regional_fig(),
-           'lambda_loc' = create_local_fig(),
-           'mepp_reg' = create_log_regional_fig(),
-           'mepp_loc' = stop('Feature not yet added, but is on the way\n',
-                             'Sorry for the inconvenience!'))
+                "lambda_reg" = create_lin_regional_fig(),
+                'lambda_loc' = create_local_fig(),
+                'mepp_reg' = create_log_regional_fig(),
+                'mepp_loc' = stop('Feature not yet added, but is on the way\n',
+                                  'Sorry for the inconvenience!'))
     x
     
   })
-
+  
   output$figure1 <- renderPlot({
     
     Fig <- UI_Input_switch()
     
     print(Fig)
-      
+    
   })
   
   # Uncomment to render Demography data summary table
-  # output$table1 <- renderTable({
-  # 
-  #   Table <- knitr::kable(tyson$demo.data)
-  #   print(Table)
+  # output$traits <- renderText({
+  #   
+  #    print(input$traits)
   # })
-
+  
 })
 
 

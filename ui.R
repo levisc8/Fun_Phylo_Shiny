@@ -89,8 +89,8 @@ shinyUI(fluidPage(
     
   ),
     mainPanel(
-      plotOutput('figure1')#,
-      # tableOutput('table1') uncomment to check demography data summary table
+      plotOutput('figure1')
+      # textOutput('traits') # uncomment to check demography data summary table
     )
     
   )
