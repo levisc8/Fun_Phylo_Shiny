@@ -256,7 +256,7 @@ shinyServer(function(input, output) {
       spp_hab_regex <- gsub('; ', '|', spp_hab)
       
       spp_hab_ind   <- spp.list$Species[grepl(spp_hab_regex, spp.list$Habitat)] %>%
-        .[. %in% names(reg_traits)]
+        .[. %in% names(FPD)]
       
       if("MPD" %in% input$met.phylo){
         out <- c(out, mean(FPD[spp_hab_ind , x], na.rm = TRUE))
