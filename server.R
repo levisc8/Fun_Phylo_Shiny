@@ -1,5 +1,6 @@
 
 library(shiny)
+library(rlang)
 library(FunPhylo)
 library(ggplot2)
 library(dplyr)
@@ -12,8 +13,11 @@ spp.list <- tyson$spp.list
 demog <- tyson$demo.data
 trait.data <- tyson$traits
 demog$Invasive <- NA_character_
+
 for(i in seq_len(dim(demog)[1])) {
+  
   demog$Invasive[i] <- communities$Invasive[communities$community == demog$Species[i]][1]
+  
 }
 
 demog$Invasive <- ifelse(demog$Invasive == 1, "Yes", "No")
@@ -168,8 +172,16 @@ shinyServer(function(input, output) {
     } else{
       x.lab <- "Functional-Phylogenetic "
     }
+    
+    if(input$resp.var == 'raw') {
+      y_var <- rlang::sym("ESCR")
+    } else {
+      y_var <- rlang::sym("ESCR2")
+    }
+      
+      
     # Plot!
-    Fig <- ggplot(data = dat, aes(x = out, y = ESCR2)) + 
+    Fig <- ggplot(data = dat, aes(x = out, y = !! y_var)) + 
       theme(panel.background = element_blank(),
             panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
@@ -237,11 +249,19 @@ shinyServer(function(input, output) {
                          p = 2) %>% data.frame()
     diag(FPD) <- NA
     # Store correct metric
-    for(x in unique(demog$Species)){
+    for(x in unique(demog$Species)) {
+      
+      spp_hab <- spp.list$Habitat[spp.list$Species == x]
+      
+      spp_hab_regex <- gsub('; ', '|', spp_hab)
+      
+      spp_hab_ind   <- spp.list$Species[grepl(spp_hab_regex, spp.list$Habitat)] %>%
+        .[. %in% names(reg_traits)]
+      
       if("MPD" %in% input$met.phylo){
-        out <- c(out, mean(FPD[ ,x], na.rm = TRUE))
+        out <- c(out, mean(FPD[spp_hab_ind , x], na.rm = TRUE))
       } else{
-        out <- c(out, min(FPD[ ,x], na.rm = TRUE))
+        out <- c(out, min(FPD[spp_hab_ind , x], na.rm = TRUE))
       }
     }
     
@@ -281,8 +301,15 @@ shinyServer(function(input, output) {
     } else{
       x.lab <- "Functional-Phylogenetic "
     }
+    
+    if(input$resp.var == 'raw') {
+      y_var <- rlang::sym("ESCR")
+    } else {
+      y_var <- rlang::sym("ESCR2")
+    }
+    
     # plot!
-    Fig <- ggplot(demog, aes(x = out, y = ESCR2)) + 
+    Fig <- ggplot(demog, aes(x = out, y = !! y_var)) + 
       theme(panel.background = element_blank(),
             panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
@@ -475,9 +502,7 @@ shinyServer(function(input, output) {
         mpd.form <- as.formula(paste0('ESCR ~ mpa_', a,'+ CRBM'))
       }
       
-      nnd.form <- as.formula(paste0('ESCR2 ~ nna_', a,'+ CRBM'))
-      mpd.form <- as.formula(paste0('ESCR2 ~ mpa_', a,'+ CRBM'))
-      
+
       R2dat$NND[i] <- r2_calc(mod.data, nnd.form)
       R2dat$MPD[i] <- r2_calc(mod.data, mpd.form)
     }
