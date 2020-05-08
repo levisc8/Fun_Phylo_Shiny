@@ -100,11 +100,14 @@ shinyServer(function(input, output) {
     
     phylo <- choose_phylo()
     
+    monocots <- dplyr::filter(spp.list, Monocot == 1)
+    
     for(x in unique(demog$Species)){
       
       
       use_com <- filter(communities, exotic_species == x &
-                          community %in% phylo$tip.label)
+                          community %in% phylo$tip.label & 
+                          ! community %in% monocots$Species)
       
       phylo.mat <- make_local_phylo_dist(x, use_com, phylo)
       fun.mat <- make_local_trait_dist(x, use_com, trait.data,
@@ -116,7 +119,7 @@ shinyServer(function(input, output) {
                         metric = input$met.phylo,
                         n.rare = 11, a = input$Little.a, p = 2,
                         abundance.weighted = input$AW,
-                        community.data = communities)
+                        community.data = use_com)
       
       # make sure we save the requested metric
       
@@ -160,11 +163,8 @@ shinyServer(function(input, output) {
     textx <- max(dat$out) - ((max(dat$out) - min(dat$out)) / 8) 
     texty <- max(dat$ESCR2) -.5
     
-    # if(input$log){
-    #   textx <- textx - (1.1-input$Little.a * .1)
-    # }
-    
     # X-axis label changes depending on little a
+    
     if(input$Little.a == 0){
       x.lab <- "Functional "
     } else if(input$Little.a == 1){
@@ -247,21 +247,14 @@ shinyServer(function(input, output) {
                          PDist = as.matrix(phylo.mat),
                          phyloWeight = input$Little.a,
                          p = 2) %>% data.frame()
-    diag(FPD) <- NA
+    diag(FPD) <- NA_real_
     # Store correct metric
     for(x in unique(demog$Species)) {
       
-      spp_hab <- spp.list$Habitat[spp.list$Species == x]
-      
-      spp_hab_regex <- gsub('; ', '|', spp_hab)
-      
-      spp_hab_ind   <- spp.list$Species[grepl(spp_hab_regex, spp.list$Habitat)] %>%
-        .[. %in% names(FPD)]
-      
       if("MPD" %in% input$met.phylo){
-        out <- c(out, mean(FPD[spp_hab_ind , x], na.rm = TRUE))
+        out <- c(out, mean(FPD[ , x], na.rm = TRUE))
       } else{
-        out <- c(out, min(FPD[spp_hab_ind , x], na.rm = TRUE))
+        out <- c(out, min(FPD[ , x], na.rm = TRUE))
       }
     }
     
@@ -378,7 +371,7 @@ shinyServer(function(input, output) {
                            phyloWeight = input$Little.a,
                            p = 2)
       
-      diag(FPD) <- NA
+      diag(FPD) <- NA_real_
       
       for(x in unique(Exotics$Species)){
         if("MPD" %in% input$met.phylo){
@@ -395,7 +388,7 @@ shinyServer(function(input, output) {
       
       phylo.mat <- cophenetic(phylo) %>% data.frame()
       # phylo.mat <- phylo.mat/max(phylo.mat)
-      diag(phylo.mat) <- NA
+      diag(phylo.mat) <- NA_real_
       for(x in unique(Exotics$Species)){
         if("MPD" %in% input$met.phylo){
           out <- c(out, mean(phylo.mat[ ,x], na.rm = T))
@@ -417,8 +410,8 @@ shinyServer(function(input, output) {
                          family = binomial(),
                          data = Exotics))
     
-    textx <- max(Exotics$out)-.03
-    texty <- .1
+    textx <- max(Exotics$out) - 0.03
+    texty <- 0.1
     
     Fig <- ggplot(data = Exotics, aes(x = out, y = Invasive)) +
       theme(panel.background = element_blank(),
@@ -438,7 +431,8 @@ shinyServer(function(input, output) {
             axis.text = element_text(size = 16))  +
       geom_point(aes(color = Invasive)) + 
       stat_smooth(formula = y ~ x,
-                  method = "glm", method.args = list(family = "binomial"),
+                  method = "glm",
+                  method.args = list(family = "binomial"),
                   se = FALSE, color = 'red') +
       annotate('text', label = paste("Pr(>|t|):", 
                                      round(coef(lmdat)[2,4], 3)),
@@ -458,16 +452,19 @@ shinyServer(function(input, output) {
     a_seq <- seq(0, 1, length.out = input$res)
     mod.data <- demog
     
-    mod.data[ , paste0('nna_', a_seq)] <- NA
-    mod.data[ , paste0('mpa_', a_seq)] <- NA
+    mod.data[ , paste0('nna_', a_seq)] <- NA_real_
+    mod.data[ , paste0('mpa_', a_seq)] <- NA_real_
     
     R2dat <- data.frame(A = a_seq,
-                        NND = rep(NA, input$res),
-                        MPD = rep(NA, input$res))
+                        NND = rep(NA_real_, input$res),
+                        MPD = rep(NA_real_, input$res))
     
     spp.list$Species <- gsub("-", "\\.", spp.list$Species)
     trait.data <- trait.data[trait.data$Species.Name %in% spp.list$Species, ]
     trait.data$Species.Name <- gsub("-", "\\.", trait.data$Species.Name)
+    
+    monocots <- dplyr::filter(spp.list, Monocot == 1)
+    trait.data <- filter(trait.data, ! Species.Name %in% monocots$Species)
     
     phylo.mat <- make_regional_phylo_dist(trait.data$Species.Name, phylo = phylo)
     fun.mat <- make_regional_trait_dist(trait.data, traits) %>% as.matrix %>%
@@ -485,7 +482,7 @@ shinyServer(function(input, output) {
                            PDist = phylo.mat,
                            phyloWeight = a,
                            p = 2) %>% data.frame()
-      diag(FPD) <- NA
+      diag(FPD) <- NA_real_
       for(x in unique(demog$Species)){
         mod.data[mod.data$Species == x, paste0('nna_', a)] <- min(FPD[ ,x],
                                                                   na.rm = T)
@@ -564,19 +561,21 @@ shinyServer(function(input, output) {
     a_seq <- seq(0, 1, length.out = input$res)
     mod.data <- demog
     
-    mod.data[ , paste0('nna_', a_seq)] <- NA
-    mod.data[ , paste0('mpa_', a_seq)] <- NA
+    mod.data[ , paste0('nna_', a_seq)] <- NA_real_
+    mod.data[ , paste0('mpa_', a_seq)] <- NA_real_
     
     R2dat <- data.frame(A = a_seq,
-                        NND = rep(NA, input$res),
-                        MPD = rep(NA, input$res))
+                        NND = rep(NA_real_, input$res),
+                        MPD = rep(NA_real_, input$res))
     
     
     for(x in unique(demog$Species)){
       
+      monocots <- dplyr::filter(spp.list, Monocot == 1)
       
       use_com <- filter(communities, exotic_species == x &
-                          community %in% phylo$tip.label)
+                          community %in% phylo$tip.label &
+                          ! community %in% monocots$Species)
       
       phylo.mat <- make_local_phylo_dist(x, use_com, phylo)
       fun.mat <- make_local_trait_dist(x, use_com, trait.data,
@@ -588,7 +587,7 @@ shinyServer(function(input, output) {
                           fun.mat = fun.mat,
                           n.rare = 11, a = a, p = 2,
                           abundance.weighted = input$AW,
-                          community.data = communities)
+                          community.data = use_com)
         
         mod.data[mod.data$Species == x, paste0('nna_', a)] <- ifelse(input$log, 
                                                                      log(FPD$rare.nnd),
